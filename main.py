@@ -47,7 +47,8 @@ print(dataset.head())
 
 
 # Creating the dataset with the needed columns.
-new_dataset = dataset.filter(['brand', 'categories', 'manufacturerNumber', 'manufacturer', 'reviews.numHelpful', 'reviews.rating', 'reviews.doRecommend' ], axis = 1)
+# add  'reviews.rating' for a better accuracy.
+new_dataset = dataset.filter(['brand', 'categories', 'manufacturerNumber', 'manufacturer', 'reviews.numHelpful', 'reviews.doRecommend' ], axis = 1)
 
 # Dataset Util.
 # Creating pyPlots.
@@ -162,6 +163,47 @@ def prepare_targets(y_train, y_test):
     return y_train_enc, y_test_enc
 
 
+def plot(history):
+    """
+    Se creeaza numeroase grafice pe modelul retelei neuronale creat,
+    :param history: reprezinta modelul retelei neuronale artificiale.
+    :return: grafic pentru accuratetea atat pentru valorile de antrenare cat si cele de testare.
+             grafic pentru functia de pierdere atat pentru valorile de antrenare cat si cele de testare.
+             grafic pentru eroarea patratica medie atat pentru valorile de antrenare cat si cele de testare.
+    Pe aceste grafice se poate vedea foarte usor daca modelul retelei neuronale este eficace sau nu.
+    """
+    plt.figure(1)
+
+    plt.subplot(211)
+    # summarize history for accuracy
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+
+    plt.subplot(212)
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+
+    plt.tight_layout()
+
+    plt.show()
+
+    plt.plot(history.history['mse'])
+    plt.plot(history.history['val_mse'])
+    plt.title('Mean squared error')
+    plt.ylabel('mse')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+
 
 X = new_dataset.drop('reviews.doRecommend', axis = 1)
 Y = new_dataset['reviews.doRecommend']
@@ -197,20 +239,21 @@ print(score)
 model = Sequential()
 
 # model.add(Convolution1D(filters=2, kernel_size=1, padding='SAME', activation='sigmoid'))
-model.add(Flatten(input_shape=(6,)))
+model.add(Flatten(input_shape=(5,)))
 # model.add(Dense(24, activation='relu', kernel_regularizer=l2(0.02), bias_regularizer=l2(0.02), kernel_initializer='LecunNormal', bias_initializer='zeros'))
 # model.add(Dropout(0.2))
-model.add(Dense(16, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01),
-                kernel_initializer='LecunNormal', bias_initializer='zeros'))
+model.add(Dense(30, activation='softmax', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01)))
 model.add(Dropout(0.1))
-model.add(Dense(10, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01)))
+model.add(Dense(20, activation='softmax'))
 model.add(Dropout(0.2))
-model.add(Dense(2, activation='relu'))
+model.add(Dense(10, activation='softmax'))
+model.add(Dropout(0.2))
+model.add(Dense(1, activation='softmax'))
 
 sgd = tf.keras.optimizers.SGD(learning_rate=0.001, nesterov=True, decay=1e-8, momentum=0.9)
-model.compile(loss='cosine_similarity', optimizer=sgd, metrics=["accuracy", "mse", "mae"])
+model.compile(loss='binary_crossentropy', optimizer=sgd, metrics=["accuracy", "mse", "mae"])
 
-history = model.fit(X_train, Y_train, epochs=50, batch_size=164, verbose='auto', validation_split=0.2, shuffle=True)
+history = model.fit(X_train, Y_train, epochs=50, batch_size=32, verbose='auto', validation_split=0.2, shuffle=True)
 
 # Accuratetea ar putea fi scrisa ca numarul de predictii corecte / numarul total de predictii.
 print(history.history.keys())
@@ -233,4 +276,4 @@ reconstructed_model.fit(X_test, Y_test)
 
 print(model.summary())
 
-#plot(history)
+plot(history)
